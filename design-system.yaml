@@ -1,0 +1,212 @@
+# =============================================================================
+# Modern Glass — a flat, HIG / Material 3 mobile design system
+# Reusable UI/design-system spec (no app logic). Safe to publish.
+# Themed via a `data-theme` attribute + CSS custom properties.
+# version: 1.0.0
+# =============================================================================
+meta:
+  name: Modern Glass
+  version: 1.0.0
+  summary: >
+    Flat, glassmorphic, mobile-first design system aligned with Apple HIG and
+    Material 3. Depth is conveyed by tonal elevation (no shadows/glows). Dark
+    surfaces can be derived from a single seed color; accents are normalized to
+    a readable tone so any seed meets WCAG AA on dark surfaces.
+  platform: mobile-first (centered max-width column on wider viewports)
+  theming: data-theme attribute switches CSS custom properties (dark | light | seed)
+
+principles:
+  - Flat over skeuomorphic. No gradients, drop shadows, glows, or neon.
+  - Depth by tone, not shadow (Material 3 tonal elevation).
+  - Identity from the surface tint; legibility from the accent tone. Never fight
+    one color to do both (no text outlines / hacks).
+  - Mobile-first; one layout, centered on wide screens.
+  - Reference design tokens (CSS variables), never raw hex in components.
+  - Icons are a webfont (e.g. Material Symbols) or text. No emoji.
+  - Larger, readable type over dense information.
+
+# ---------------------------------------------------------------------------
+typography:
+  families:
+    ui: "'Hanken Grotesk', 'Noto Sans JP', -apple-system, sans-serif"   # body / UI
+    display: "'Hanken Grotesk', 'Noto Sans JP', sans-serif"             # titles / logo
+    numeric: "'Hanken Grotesk', 'Noto Sans JP', sans-serif"             # tabular numbers
+    label: "'JetBrains Mono', 'Noto Sans JP', monospace"                # uppercase micro-labels
+  scale_px:                       # roles, not a rigid ramp
+    caption_min: 13               # only for intentional kickers; otherwise avoid < 15
+    secondary_floor: 15           # smallest body/secondary text allowed
+    body: 17                      # default body & labels
+    value: 18                     # emphasized values
+    mid_number: 22
+    big_number: 26                # 26+; very-large display numbers left as-is
+  rules:
+    - "Numbers use the numeric family + `font-variant-numeric: tabular-nums`."
+    - "Uppercase micro-labels use the label family."
+    - "Navigation / filter tabs / section headings use `text-transform: uppercase` (keep source text in its natural case for i18n and a11y)."
+
+# ---------------------------------------------------------------------------
+color:
+  # Purpose tokens consumed by components (resolved per theme below).
+  roles:
+    surface:                      # tonal elevation ladder (low -> high)
+      bg: page canvas (elevation 0)
+      bg2: solid card (elevation 1)
+      glass: frosted card (elevation 1, translucent + backdrop blur)
+      chip: nested fill / chip (elevation 2, lighter than card)
+      track: bar groove
+      nav: nav bar / sticky / popover (top elevation, frosted)
+    text: [text, text2, text3, text4]    # primary -> faintest
+    border: [bd, bd2]
+    accent: [accent, accent2, accentInk] # accent / secondary / ink-on-accent
+    accent_soft: accentSoft              # low-alpha accent fill
+    accent_border: accentBd
+    accent_readable: accentRead          # contrast-corrected accent (nav text, etc.)
+    semantic:
+      win: var(--accent)                 # win = accent (no green/pink)
+      lose: var(--text3)                 # lose = neutral
+  blur: 22px                             # frosted glass backdrop blur
+
+  themes:
+    dark:
+      bg: "#0B0E14"
+      bg2: "#181D29"
+      glass: "rgba(255,255,255,0.06)"
+      glassBd: "rgba(255,255,255,0.11)"
+      chip: "rgba(255,255,255,0.09)"
+      track: "rgba(255,255,255,0.11)"
+      nav: "rgba(26,32,45,0.92)"
+      text: "#EEF1F6"
+      text2: "#9AA2B4"
+      text3: "#7B8398"
+      text4: "#5A6276"
+      bd: "rgba(255,255,255,0.06)"
+      bd2: "rgba(255,255,255,0.10)"
+      accent: "#F5B53D"
+      accent2: "#E89321"
+      accentInk: "#1A1205"
+      accentSoft: "rgba(245,181,61,0.18)"
+      accentBd: "rgba(245,181,61,0.35)"
+    light:
+      bg: "#EDF1F8"
+      bg2: "#FFFFFF"
+      glass: "rgba(255,255,255,0.60)"
+      glassBd: "rgba(13,27,62,0.10)"
+      chip: "rgba(13,27,62,0.055)"   # nested = slightly darker (recessed) on light
+      track: "rgba(13,27,62,0.09)"
+      nav: "rgba(255,255,255,0.9)"
+      text: "#0D1B3E"
+      text2: "#5A6276"
+      text3: "#8A93A6"
+      text4: "#AEB6C6"
+      bd: "rgba(13,27,62,0.07)"
+      bd2: "rgba(13,27,62,0.12)"
+      accent: "#E08A12"
+      accent2: "#C9760A"
+      accentInk: "#FFFFFF"
+      accentSoft: "rgba(224,138,18,0.14)"
+      accentBd: "rgba(224,138,18,0.32)"
+
+  # Derive a full dark theme from one seed color (Material-3 style).
+  seed_derivation:
+    surfaces:                     # color-from-seed, hue only, low chroma, very dark
+      algorithm: hsl(hue_of(seed), min(sat_of(seed), Smax), L)
+      Smax: 0.22
+      bg:  { L: 0.065 }
+      bg2: { L: 0.115 }
+      nav: { L: 0.14, alpha: 0.92 }
+      overlays: keep white-translucent chip/glass on top of the tinted dark bg
+    accent:                       # readable tone of the seed (hue preserved)
+      algorithm: hsl(hue_of(seed), max(sat, 0.40), max(L, 0.62))
+      lightness_floor: 0.62
+      saturation_floor: 0.40
+      contrast_target: ">= 4.5:1 (WCAG AA) against the derived bg"
+    rationale: >
+      The tinted dark surface carries brand/seed identity, so the accent text
+      and fills can be lightened for contrast without losing the theme feel.
+
+# ---------------------------------------------------------------------------
+elevation:                        # tonal, no shadows
+  model: each higher surface is a lighter tone (dark/seed) or white->recessed (light)
+  ladder: [bg(0), card(1), chip-nested(2), nav-popover(3)]
+  shadows: none
+
+# ---------------------------------------------------------------------------
+spacing_radius:
+  radius:
+    control: 8-12px
+    card: 12-16px
+    pill: 999px
+  rule: single-sided borders (e.g. border-left accent) use radius 0.
+
+# ---------------------------------------------------------------------------
+touch_targets:
+  min_size_px: 44                 # HIG minimum (Material 48dp)
+  technique: keep visuals, expand hit area via min-height/min-width + box-sizing
+  exceptions: dense map markers and similar high-density targets
+
+# ---------------------------------------------------------------------------
+motion:
+  press_feedback: "button:active { transform: scale(0.97) }"
+  transition: "transform .12s ease (for tappables without their own transition)"
+  tap_highlight: "-webkit-tap-highlight-color: transparent"
+  reduced_motion:
+    media: "@media (prefers-reduced-motion: reduce)"
+    effect: animation-duration/transition-duration -> ~0; scroll-behavior auto
+
+# ---------------------------------------------------------------------------
+accessibility:
+  contrast: "text vs its background >= 4.5:1 (AA); guaranteed for seed accents"
+  focus_ring: ":focus-visible only -> outline 2px solid accent, offset 2px"
+  semantics:
+    - "icon-only buttons require aria-label"
+    - "disclosure regions: role=button + aria-expanded + Enter/Space handler"
+    - 'active nav item: aria-current="page"'
+  reduced_motion: respected (see motion)
+
+# ---------------------------------------------------------------------------
+icons:
+  set: Material Symbols Rounded (webfont)
+  classes:
+    base: "ms"                    # outline
+    filled: "msf"                 # FILL 1 variation
+  emoji: forbidden (use icons or text)
+  allowed_symbols: ["★ rating", "✕ close"]
+
+# ---------------------------------------------------------------------------
+haptics:                          # native only; no-op on web (wrap in try/catch)
+  map:
+    save_success: notification(success)
+    confirm_action: impact(medium)     # e.g. check-in
+    tab_or_nav_switch: selectionChanged
+    primary_button: impact(light)
+
+# ---------------------------------------------------------------------------
+components:
+  card:
+    background: var(--glass) or var(--bg2)   # same elevation tone
+    border: 1px solid var(--glassBd)
+    radius: 12-16px
+    blur: backdrop-filter blur(var(--blur))
+  chip_toggle:
+    border: 1.5px solid (var(--bd2) unselected / var(--accent) selected)
+    background: var(--chip) unselected / var(--accent) selected
+    color: var(--text) unselected / white selected
+    font_weight: 400 unselected / 700 selected
+    min_height: 44
+    note: unify same-kind chip groups to one identical style
+  select:
+    min_height: 44
+    option: "color: var(--text); background-color: var(--bg2)"  # theme-following
+  rating_star:
+    color: var(--accent)          # not a fixed orange
+
+# ---------------------------------------------------------------------------
+gotchas:
+  - "CSS variable aliases (e.g. --win: var(--accent)) are substituted once; redefine
+     them inside every theme block so they follow the theme."
+  - "position: sticky breaks under an ancestor with overflow other than visible;
+     use overflow-x: clip (does not create a scroll container) to clip overflow."
+  - "Reset scroll to top on view/route change so the previous screen's position
+     is not carried over."
+  - "Guard delayed navigation (setTimeout) so it does not override a manual
+     navigation made within the delay window."
